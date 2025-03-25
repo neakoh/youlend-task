@@ -1,0 +1,16 @@
+services:
+  api:
+    build:
+      context: ./api
+    container_name: youlend-api
+    ports:
+      - "3000:3000"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./api
+          target: index.js
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: package.json

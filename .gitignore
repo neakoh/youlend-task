@@ -1,0 +1,25 @@
+# Terraform files
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Logs
+logs/audit/*
+*.log
+
+# Keep terraform directories but ignore their contents
+!terraform/.gitkeep
+!modules/.gitkeep
+
+# Exclude any sensitive or local-only files
+*.env
+.env.*
+!.env.example
+
+# OS-specific files
+.DS_Store
+.vscode/
+
+# api
+application/api/node_modules
