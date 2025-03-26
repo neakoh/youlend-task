@@ -1,0 +1,116 @@
+name: update main.tf
+
+on:
+  workflow_dispatch: 
+  push: 
+    branches:
+      - main
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy: 
+      matrix:
+        container: ['backend', 'frontend']
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Run Trivy vulnerability scanner for code scanning
+      uses: aquasecurity/trivy-action@master
+      env:
+        TRIVY_DB_REPOSITORY: "public.ecr.aws/aquasecurity/trivy-db:2"
+      with:
+        scan-type: 'fs'
+        scan-ref: './application/${{ matrix.container }}'
+        format: 'sarif'
+        output: 'trivy-static-results.sarif' 
+        trivyignore-path: './application/${{ matrix.container }}/.trivyignore'
+        exit-code: '0'
+        ignore-unfixed: true
+        severity: 'CRITICAL,HIGH'
+        scanners: 'vuln,secret,misconfig'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: trivy-static-results.sarif
+
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    needs: scan
+    strategy: 
+      matrix:
+        container: ['backend', 'frontend']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli curl
+
+      - name: Build Docker image
+        run: |
+          echo "Building Docker image..."
+          docker build -t neakoh-ylk8s/${{ matrix.container }}:latest ./application/${{ matrix.container }}
+
+      - name: Run Trivy vulnerability scanner for code scanning
+        uses: aquasecurity/trivy-action@master
+        env:
+          TRIVY_DB_REPOSITORY: "public.ecr.aws/aquasecurity/trivy-db:2"
+        with:
+          scan-type: 'image'
+          scan-ref: 'directory/${{ matrix.container }}:latest'
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.container }}.sarif' 
+          trivyignore-path: './application/${{ matrix.container }}/.trivyignore' 
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+          scanners: 'vuln'
+
+      - name: Upload Trivy scan results to GitHub Security tab#  
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-${{ matrix.container }}.sarif'
+          category: '${{ matrix.container }}'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com
+        run: |
+          echo "Pushing Docker image to ECR..."
+          docker tag neakoh-ylk8s/${{ matrix.container }}:latest $ECR_REGISTRY/neakoh-ylk8s/${{ matrix.container }}:latest
+          docker push  $ECR_REGISTRY/neakoh-ylk8s/${{ matrix.container }}:latest
+          echo "${{ matrix.container }}_image_uri=$ECR_REGISTRY/neakoh-ylk8s/${{ matrix.container }}:latest" >> ${{ matrix.container }}_uri.txt
+
+      - name: Upload tfvars.env as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.container }}_uri
+          path: ${{ matrix.container }}_uri.txt
+

@@ -201,12 +201,12 @@ export default function ViewLoans() {
               
               <div className="col-span-2">
                 <Chip 
-                  color={(loan.repayments?.length ?? 0) > 0 ? "success" : "warning"} 
+                  color={loan.current_loan_balance === 0 ? "success" : (loan.repayments?.length ?? 0) > 0 ? "primary" : "warning"} 
                   size="sm" 
                   variant="flat"
                   className="w-full justify-center"
                 >
-                  {(loan.repayments?.length ?? 0) > 0 ? "Active" : "No Repayments"}
+                  {loan.current_loan_balance === 0 ? "Paid" : (loan.repayments?.length ?? 0) > 0 ? "Active" : "No Repayments"}
                 </Chip>
               </div>
               
