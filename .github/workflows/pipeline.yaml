@@ -71,7 +71,7 @@ jobs:
           TRIVY_DB_REPOSITORY: "public.ecr.aws/aquasecurity/trivy-db:2"
         with:
           scan-type: 'image'
-          scan-ref: './application/${{ matrix.container }}:latest'
+          scan-ref: 'neakoh-ylk8s/${{ matrix.container }}:latest'
           format: 'sarif'
           output: 'trivy-results-${{ matrix.container }}.sarif' 
           trivyignore-path: './application/${{ matrix.container }}/.trivyignore' 
