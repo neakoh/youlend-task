@@ -1,12 +1,12 @@
 services:
   api:
     build:
-      context: ./api
+      context: ./backend
     container_name: youlend-api
     ports:
       - "3000:3000"
     env_file:
-      - ./api/.env
+      - ./backend/.env
     develop:
       watch:
         - action: rebuild
