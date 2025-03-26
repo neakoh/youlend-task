@@ -73,7 +73,7 @@ jobs:
           TRIVY_DB_REPOSITORY: "public.ecr.aws/aquasecurity/trivy-db:2"
         with:
           scan-type: 'image'
-          scan-ref: 'directory/${{ matrix.container }}:latest'
+          scan-ref: './application/${{ matrix.container }}:latest'
           format: 'sarif'
           output: 'trivy-results-${{ matrix.container }}.sarif' 
           trivyignore-path: './application/${{ matrix.container }}/.trivyignore' 
@@ -109,7 +109,7 @@ jobs:
           echo "${{ matrix.container }}_image_uri=$ECR_REGISTRY/neakoh-ylk8s/${{ matrix.container }}:latest" >> ${{ matrix.container }}_uri.txt
 
       - name: Upload tfvars.env as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.container }}_uri
           path: ${{ matrix.container }}_uri.txt
