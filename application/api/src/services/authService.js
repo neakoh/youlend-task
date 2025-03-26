@@ -2,22 +2,21 @@ const { setupLogging } = require('../middleware/logging');
 const memoryStore = require('../utils/memoryStore');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { schema, changePasswordSchema } = require('../utils/joischemas')
+const { v4: uuidv4 } = require('uuid');
 
 // Get logger instance
 const { logger } = setupLogging();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';  // In production, always use environment variable
+if (!process.env.JWT_SECRET) {
+    logger.error('JWT_SECRET is not defined in environment variables');
+    throw new Error('JWT_SECRET must be defined');
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 class AccountService {
-    async register(username, password, isAdmin = false) {
+    async register(username, password, isAdmin ) {
         logger.info('Service: Validating registration data');
-        const { error } = schema.validate({ username, password });
-        if (error) {
-            logger.error('Service: Registration validation failed', { error: error.details[0].message });
-            throw new Error(error.details[0].message);
-        }
-
         const users = memoryStore.get('users') || [];
 
         if (users.find(user => user.username === username)) {
@@ -27,7 +26,7 @@ class AccountService {
 
         logger.info('Service: Hashing password');
         const hashedPassword = await bcrypt.hash(password, 10);
-        const userId = users.length + 1;
+        const userId = uuidv4();
         const role = isAdmin ? 'admin' : 'user';
         
         const newUser = {
@@ -42,11 +41,11 @@ class AccountService {
         logger.info('Service: User registered successfully', { userId, role });
         
         const token = jwt.sign(
-            { userId, username, role },
+            { id: userId, username, role },
             JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '1h' }
         );
-        
+        console.log(`Service: User registered successfully for ${username}`)
         return { 
             user: {
                 username,
@@ -69,13 +68,13 @@ class AccountService {
 
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
-            logger.error('Service: Invalid password', { email });
+            logger.error('Service: Invalid password', { email: username });
             throw new Error('Invalid username or password');
         }
 
         const token = jwt.sign(
             { 
-                userId: user.id, 
+                id: user.id, 
                 username: user.username, 
                 role: user.role 
             },
@@ -91,14 +90,6 @@ class AccountService {
             },
             token
         };
-    }
-
-    verifyToken(token) {
-        try {
-            return jwt.verify(token, JWT_SECRET);
-        } catch (error) {
-            throw new Error('Invalid token');
-        }
     }
 
     async get(id) {
@@ -123,12 +114,6 @@ class AccountService {
 
     async updatePassword(id, currentPassword, newPassword ) {
         logger.info('Service: Validating password update data');
-        const { error } = changePasswordSchema.validate({ currentPassword, newPassword });
-        if (error) {
-            logger.error('Service: Password update validation failed', { error: error.details[0].message });
-            throw new Error(error.details[0].message);
-        }
-
         const users = memoryStore.get('users') || [];
         const user = users.find(u => u.id === id);
 
@@ -204,30 +189,15 @@ class AccountService {
         }
     }
 
-    async updateUserInfo(id, deliveryInfo, phone) {
-        logger.info('Service: Updating user information');
-        const users = memoryStore.get('users') || [];
-        const user = users.find(u => u.id === id);
-
-        if (!user) {
-            logger.error('Service: User not found', { id });
-            return { error: "User not found" }
-        }
-
-        if(deliveryInfo){
-            user.address_line1 = deliveryInfo.address_line1;
-            user.address_line2 = deliveryInfo.address_line2;
-            user.city = deliveryInfo.city;
-            user.county = deliveryInfo.county;
-            user.postcode = deliveryInfo.postal_code;
-        }
-        user.phone_number = phone;
-
-        memoryStore.set('users', users);
-        logger.info('Service: User information updated successfully', { id });
-
-        return { 
-            firstname: user.firstname 
+    verifyToken(token) {
+        try {
+            if (!token) {
+                throw new Error('No token provided');
+            }
+            return jwt.verify(token, JWT_SECRET);
+        } catch (error) {
+            logger.error('Token verification failed', { error: error.message });
+            throw new Error('Invalid token');
         }
     }
 }

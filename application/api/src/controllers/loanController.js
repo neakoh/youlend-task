@@ -6,82 +6,143 @@ const { logger } = setupLogging();
 
 class LoanController {
   getAllLoans(req, res) {
+    const isAdmin = req.user.role === 'admin';
+    const userId = req.user.id;
+    console.log(userId)
     logger.info('Controller: Fetching all loans');
-    const loans = loanService.getAllLoans();
+    const loans = loanService.getAllLoans(isAdmin, userId);
     res.json(loans);
   }
 
   getLoanById(req, res) {
-    const id = parseInt(req.body.id);
-    logger.info(`Controller: Fetching loan with ID: ${id}`);
+    const id = req.body.id;  
+    const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
     
-    const loan = loanService.getLoanById(id);
-    
-    if (!loan) {
-      logger.warn(`Controller: Loan with ID ${id} not found`);
-      return res.status(404).json({ message: 'Loan not found' });
+    if (!id) {
+      logger.warn('Controller: Missing loan ID');
+      return res.status(400).json({ message: 'Please provide a loan ID' });
     }
     
-    res.json(loan);
+    logger.info('Controller: Fetching loan', { loanId: id });
+    
+    try {
+      const loan = loanService.getLoanById(id, userId, isAdmin);
+      
+      if (!loan) {
+        logger.warn('Controller: Loan not found', { loanId: id });
+        return res.status(404).json({ message: 'Loan not found' });
+      }
+      
+      res.json(loan);
+    } catch (error) {
+      if (error.message.includes('Unauthorized')) {
+        logger.error('Controller: Unauthorized loan access attempt', { loanId: id, userId });
+        return res.status(403).json({ message: error.message });
+      }
+      logger.error('Controller: Error fetching loan', { error: error.message });
+      res.status(500).json({ message: 'Internal server error' });
+    }
   }
 
-  getLoanByBorrowerName(req, res) {
-    const name = req.body.borrower_name;
-    logger.info(`Controller: Fetching loan with borrower name: ${name}`);
+  getLoansByBorrowerName(req, res) {
+    const name = req.body.borrower_name || req.user.username;
+    const isAdmin = req.user.role === 'admin';
+    const userId = req.user.id;
+
+    logger.info(`Controller: Fetching loans by borrower name: ${name}, role: ${req.user.role}`);
     
-    const loan = loanService.getLoanByBorrowerName(name);
-    
-    if (!loan) {
-      logger.warn(`Controller: Loan with borrower name ${name} not found`);
-      return res.status(404).json({ message: 'Loan not found' });
-    }
-    
-    res.json(loan);
+    const loans = loanService.getLoansByBorrowerName(name, isAdmin, userId);
+
+    res.json(loans);
   }
 
   createLoan(req, res) {
-    const { borrower_name, funding_amount } = req.body;
-    
-    // Validate request
-    if (!borrower_name || !funding_amount) {
+    const initial_funding_amount = req.body.initial_funding_amount;  
+    const borrower_name = req.body.borrower_name || req.user.username;
+    const user = req.user
+
+    if (!borrower_name || !initial_funding_amount) {
       logger.warn('Controller: Invalid loan creation request', { body: req.body });
-      return res.status(400).json({ message: 'Please provide borrower_name and funding_amount' });
+      return res.status(400).json({ message: 'Please provide initial_funding_amount' });
+    }
+
+    // Validate funding amount is a number
+    const amount = parseFloat(initial_funding_amount);
+    if (isNaN(amount) || amount <= 0) {
+      logger.warn('Controller: Invalid funding amount', { initial_funding_amount });
+      return res.status(400).json({ message: 'Initial funding amount must be a positive number' });
     }
     
-    const newLoan = loanService.createLoan({ borrower_name, funding_amount });
+    const newLoan = loanService.createLoan({ borrower_name, initial_funding_amount: amount, user });
     logger.info('Controller: New loan created', { loanId: newLoan.id });
     
     res.status(201).json(newLoan);
   }
 
   updateLoan(req, res) {
-    const id = parseInt(req.body.id);
+    const loan_id = req.body.loan_id;  
     const repayment_amount = req.body.repayment_amount;
+    const borrower_id = req.user.id;  
+    const isAdmin = req.user.role === 'admin';
     
-    logger.info(`Controller: Updating loan with ID: ${id}`);
-    
-    const updatedLoan = loanService.updateLoan(id, { repayment_amount });
-    
-    if (!updatedLoan) {
-      logger.warn(`Controller: Loan with ID ${id} not found for update`);
-      return res.status(404).json({ message: 'Loan not found' });
+    if (!loan_id) {
+      logger.warn('Controller: Missing loan ID');
+      return res.status(400).json({ message: 'Please provide a loan ID' });
     }
     
-    res.json(updatedLoan);
+    logger.info('Controller: Processing loan update request', { loanId: loan_id });
+    
+    try {
+      const updatedLoan = loanService.updateLoan(loan_id, { repayment_amount, borrower_id }, isAdmin);
+      
+      if (!updatedLoan) {
+        logger.warn('Controller: Loan not found for update', { loanId: loan_id });
+        return res.status(404).json({ message: 'Loan not found' });
+      }
+      
+      logger.info('Controller: Loan updated successfully', { loanId: loan_id });
+      res.json(updatedLoan);
+    } catch (error) {
+      if (error.message.includes('Unauthorized')) {
+        logger.error('Controller: Unauthorized loan update attempt', { loanId: loan_id, userId: borrower_id });
+        return res.status(403).json({ message: error.message });
+      }
+      logger.error('Controller: Error updating loan', { error: error.message });
+      res.status(500).json({ message: 'Internal server error' });
+    }
   }
 
   deleteLoan(req, res) {
-    const id = parseInt(req.body.id);
-    logger.info(`Controller: Deleting loan with ID: ${id}`);
-    
-    const deleted = loanService.deleteLoan(id);
-    
-    if (!deleted) {
-      logger.warn(`Controller: Loan with ID ${id} not found for deletion`);
-      return res.status(404).json({ message: 'Loan not found' });
+    const id = req.body.id;  
+    const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!id) {
+      logger.warn('Controller: Missing loan ID');
+      return res.status(400).json({ message: 'Please provide a loan ID' });
     }
-    
-    res.status(204).send();
+
+    logger.info('Controller: Processing loan deletion request', { loanId: id });
+
+    try {
+      const result = loanService.deleteLoan(id, userId, isAdmin);
+      
+      if (result === null) {
+        logger.warn('Controller: Loan not found for deletion', { loanId: id });
+        return res.status(404).json({ message: 'Loan not found' });
+      }
+      
+      logger.info('Controller: Loan deleted successfully', { loanId: id });
+      res.status(200).json({ message: 'Loan deleted successfully' });
+    } catch (error) {
+      if (error.message.includes('Unauthorized')) {
+        logger.error('Controller: Unauthorized loan deletion attempt', { loanId: id, userId });
+        return res.status(403).json({ message: error.message });
+      }
+      logger.error('Controller: Error deleting loan', { error: error.message });
+      res.status(500).json({ message: 'Internal server error' });
+    }
   }
 
   simulateError(req, res, next) {

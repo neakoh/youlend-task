@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
 // API routes
 const apiRoutes = require('./routes/loanRoutes');
 const authRoutes = require('./routes/authRoutes');
-app.use('/api', apiRoutes);
+app.use('/loans', apiRoutes);
 app.use('/auth', authRoutes);
 
 // Metrics endpoint for Prometheus scraping

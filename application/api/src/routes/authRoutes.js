@@ -10,7 +10,7 @@ const {
 
 } = require('../middleware/rateLimiters');
 
-router.post('/register', registerLimiter, authController.register);
+router.post('/register',  authController.register);
 router.post('/login', loginLimiter, authController.login);
 router.put('/', changePasswordLimiter, authController.changePassword);
 router.delete('/', deleteUserLimiter, authController.deleteUserInfo);

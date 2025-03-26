@@ -14,7 +14,7 @@ const authenticateToken = async (req, res, next) => {
         }
 
         const decoded = await AccountService.verifyToken(token);
-        
+        console.log(decoded.role)
         // If user is admin, allow access regardless of other conditions
         if (decoded.role === 'admin') {
             logger.info('Middleware: Admin access granted', { userId: decoded.userId });

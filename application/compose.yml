@@ -5,6 +5,8 @@ services:
     container_name: youlend-api
     ports:
       - "3000:3000"
+    env_file:
+      - ./api/.env
     develop:
       watch:
         - action: rebuild

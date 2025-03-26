@@ -7,13 +7,11 @@ const passwordComplexityOptions = {
     lowerCase: 1,
     upperCase: 1,
     numeric: 1,
-    requirementCount: 3 // Requires all 4 conditions to be met
+    requirementCount: 4 // Requires all 4 conditions to be met
 };
 
 const schema = Joi.object({
-    firstname: Joi.string().max(50).required(),
-    lastname: Joi.string().max(50).required(),
-    email: Joi.string().email().required(),
+    username: Joi.string().max(50).required(),
     password: PasswordComplexity(passwordComplexityOptions).required()
 });
 

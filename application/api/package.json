@@ -19,6 +19,7 @@
     "joi-password-complexity": "^5.2.0",
     "jsonwebtoken": "^9.0.2",
     "prom-client": "^14.2.0",
+    "uuid": "^11.1.0",
     "winston": "^3.10.0",
     "winston-elasticsearch": "^0.11.0"
   },
