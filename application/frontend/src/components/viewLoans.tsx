@@ -1,4 +1,4 @@
-import { Accordion, AccordionItem, addToast, Chip, Button, Input } from "@heroui/react";
+import { Accordion, AccordionItem, addToast, Button, Chip, Input } from "@heroui/react";
 import { API_URL } from "@/config/url";
 import { useState, useEffect } from "react";
 
@@ -14,7 +14,11 @@ interface Loan {
   }>;
 }
 
-export default function ViewLoans() {
+interface ViewLoansProps {
+  refreshKey?: number;
+}
+
+export default function ViewLoans({ refreshKey = 0 }: ViewLoansProps) {
   const [data, setData] = useState<Loan[]>([]);
   const [repaymentAmount, setRepaymentAmount] = useState<{ [key: number]: string }>({});
   const isAdmin = localStorage.getItem("role") === "admin";
@@ -57,7 +61,7 @@ export default function ViewLoans() {
   
   useEffect(() => {
     getLoans();
-  }, []);
+  }, [refreshKey]);
 
   const handleRepayment = async (loanId: number) => {
     try {
@@ -172,118 +176,121 @@ export default function ViewLoans() {
   };
 
   return (
-    <>
-    {data.length > 0 ? (
-      <Accordion>
-      {data.map((loan) => (
-        <AccordionItem
-          key={loan.id}
-          aria-label={`Loan ${loan.id}`}
-          title={
-            <div className="grid grid-cols-12 gap-4 items-center w-full pt-0">
-              <div className="col-span-1">
-                <Chip color="primary" size="sm" className="justify-center">#{loan.id}</Chip>
-              </div>
-              
-              {isAdmin && (
-                <div className="col-span-2 truncate">
-                  <span className="text-gray-600 font-medium">{loan.borrower_name}</span>
-                </div>
-              )}
-              
-              <div className="col-span-2">
-                <span className="font-semibold text-primary">{formatCurrency(loan.initial_funding_amount)}</span>
-              </div>
-              
-              <div className="col-span-3">
-                <span className="font-semibold text-default-600">Balance: {formatCurrency(loan.current_loan_balance)}</span>
-              </div>
-              
-              <div className="col-span-2">
-                <Chip 
-                  color={loan.current_loan_balance === 0 ? "success" : (loan.repayments?.length ?? 0) > 0 ? "primary" : "warning"} 
-                  size="sm" 
-                  variant="flat"
-                  className="w-full justify-center"
-                >
-                  {loan.current_loan_balance === 0 ? "Paid" : (loan.repayments?.length ?? 0) > 0 ? "Active" : "No Repayments"}
-                </Chip>
-              </div>
-              
-              <div className="col-span-2 text-right">
-                <span className="text-sm text-gray-500">{formatDate(loan.created_at)}</span>
-              </div>
-            </div>
-          }
-        >
-          <div className="p-6 space-y-6 bg-gray-50 rounded-b-lg">
-            <div className="flex gap-4 items-end">
-              <Input
-                label="Repayment Amount"
-                placeholder="Enter amount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={repaymentAmount[loan.id] || ''}
-                onChange={(e) => setRepaymentAmount(prev => ({
-                  ...prev,
-                  [loan.id]: e.target.value
-                }))}
-                className="flex-1"
-              />
-              <div className="flex gap-2">
-                <Button 
-                  color="primary"
-                  onClick={() => handleRepayment(loan.id)}
-                >
-                  Make Repayment
-                </Button>
-                {isAdmin && (
-                  <Button 
-                    color="danger"
-                    variant="flat"
-                    onClick={() => handleDelete(loan.id)}
-                  >
-                    Delete Loan
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="text-lg font-semibold text-gray-700">Repayment History</h4>
-              {(loan.repayments?.length ?? 0) > 0 ? (
-                <div className="space-y-2">
-                  {loan.repayments?.map((repayment, index) => (
-                    <div 
-                      key={index}
-                      className="grid grid-cols-12 gap-4 items-center p-3 bg-white rounded-lg border border-gray-200"
-                    >
-                      <div className="col-span-2">
-                        <span className="text-sm text-gray-500">#{index + 1}</span>
-                      </div>
-                      <div className="col-span-5">
-                        <span className="font-medium">{formatCurrency(repayment.repayment_amount)}</span>
-                      </div>
-                      <div className="col-span-5 text-right">
-                        <span className="text-sm text-gray-500">{formatDate(repayment.created_at)}</span>
-                      </div>
+    <div className="w-full flex flex-col items-start p-2 h-[66dvh] overflow-y-auto">
+      <h1 className="text-2xl font-semibold mb-4">{isAdmin ? "View Loans" : "View Your Loans"}</h1>
+      {data.length > 0 ? (
+        <div className="w-full overflow-y-auto">
+          <Accordion>
+          {data.map((loan) => (
+            <AccordionItem
+              key={loan.id}
+              aria-label={`Loan ${loan.id}`}
+              title={
+                <div className="grid grid-cols-12 gap-4 items-center w-full">
+                  <div className="col-span-1">
+                    <Chip color="primary" size="sm" className="justify-center">#{loan.id}</Chip>
+                  </div>
+                  
+                  {isAdmin && (
+                    <div className="col-span-2 truncate">
+                      <span className="text-gray-600 font-medium">{loan.borrower_name}</span>
                     </div>
-                  ))}
+                  )}
+                  
+                  <div className="col-span-2">
+                    <span className="font-semibold text-primary">{formatCurrency(loan.initial_funding_amount)}</span>
+                  </div>
+                  
+                  <div className="col-span-3">
+                    <span className="font-semibold text-default-600">Balance: {formatCurrency(loan.current_loan_balance)}</span>
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <Chip 
+                      color={loan.current_loan_balance === 0 ? "success" : (loan.repayments?.length ?? 0) > 0 ? "primary" : "warning"} 
+                      size="sm" 
+                      variant="flat"
+                      className="w-full justify-center"
+                    >
+                      {loan.current_loan_balance === 0 ? "Paid" : (loan.repayments?.length ?? 0) > 0 ? "Active" : "No Repayments"}
+                    </Chip>
+                  </div>
+                  
+                  <div className="col-span-2 text-right">
+                    <span className="text-sm text-gray-500">{formatDate(loan.created_at)}</span>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-gray-500 italic">No repayments made yet</p>
-              )}
-            </div>
-          </div>
-        </AccordionItem>
-      ))}
-    </Accordion>
-    ) : (
-      <div className="flex items-center justify-center">
-        <p className="text-gray-500 italic">No loans found</p>
-      </div>
-    )}
-    </>
+              }
+            >
+              <div className="p-6 space-y-6 bg-gray-50 rounded-b-lg">
+                <div className="flex gap-4 items-end">
+                  <Input
+                    label="Repayment Amount"
+                    placeholder="Enter amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={repaymentAmount[loan.id] || ''}
+                    onChange={(e) => setRepaymentAmount(prev => ({
+                      ...prev,
+                      [loan.id]: e.target.value
+                    }))}
+                    className="flex-1"
+                  />
+                  <div className="flex gap-2">
+                    <Button 
+                      color="primary"
+                      onClick={() => handleRepayment(loan.id)}
+                    >
+                      Make Repayment
+                    </Button>
+                    {isAdmin && (
+                      <Button 
+                        color="danger"
+                        variant="flat"
+                        onClick={() => handleDelete(loan.id)}
+                      >
+                        Delete Loan
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-700">Repayment History</h4>
+                  {(loan.repayments?.length ?? 0) > 0 ? (
+                    <div className="space-y-2">
+                      {loan.repayments?.map((repayment, index) => (
+                        <div 
+                          key={index}
+                          className="grid grid-cols-12 gap-4 items-center p-3 bg-white rounded-lg border border-gray-200"
+                        >
+                          <div className="col-span-2">
+                            <span className="text-sm text-gray-500">#{index + 1}</span>
+                          </div>
+                          <div className="col-span-5">
+                            <span className="font-medium">{formatCurrency(repayment.repayment_amount)}</span>
+                          </div>
+                          <div className="col-span-5 text-right">
+                            <span className="text-sm text-gray-500">{formatDate(repayment.created_at)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 italic">No repayments made yet</p>
+                  )}
+                </div>
+              </div>
+            </AccordionItem>
+          ))}
+        </Accordion>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center w-full h-full">
+          <p className="text-gray-500 italic">No loans found</p>
+        </div>
+      )}
+    </div>
   );
 }

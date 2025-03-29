@@ -1,0 +1,21 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: youlend-app-backend-metrics 
+  labels:
+    prometheus: kube-prometheus
+    release: kube-prometheus-stack
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  namespaceSelector:
+    matchNames:
+    - application
+  endpoints:
+  - port: http
+    interval: {{ .Values.serviceMonitor.interval }}
+    path: /metrics
+{{- end }}

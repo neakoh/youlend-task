@@ -1,0 +1,45 @@
+replicas: 1
+minimumMasterNodes: 1
+
+# Resource limits
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "1"
+    memory: "2Gi"
+
+persistence:
+  enabled: false
+  storageClass: "gp2-managed-delete"
+  accessModes:
+    - ReadWriteOnce
+  size: 30Gi
+
+terminationGracePeriodSeconds: 120
+lifecycle:
+  preStop:
+    exec:
+      command: ["/bin/sh", "-c", "sleep 20"]
+
+
+securityContext:
+  runAsUser: 1000
+  fsGroup: 1000
+
+extraEnvs:
+  - name: ELASTIC_USERNAME
+    value: "elastic"
+  - name: ELASTIC_PASSWORD
+    value: "password"
+
+protocol: http
+
+esConfig:
+  elasticsearch.yml: |
+    xpack.security.enabled: true
+    xpack.security.transport.ssl.enabled: false
+    xpack.security.http.ssl.enabled: false
+
+

@@ -1,0 +1,42 @@
+# Default values for my-application
+nameOverride: ""
+fullnameOverride: ""
+
+backend:
+  replicaCount: 1
+  image:
+    repository: public.ecr.aws/j9d1b5f3/neakoh-ylk8s/backend
+    tag: "latest"
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: public.ecr.aws/j9d1b5f3/neakoh-ylk8s/frontend
+    tag: "latest"
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+  resources:
+    limits:
+      cpu: 300m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+serviceMonitor:
+  enabled: true
+  interval: 15s
+  labels:
+    release: kube-prometheus-stack

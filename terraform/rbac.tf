@@ -1,52 +1,95 @@
-# Admin ClusterRole
-resource "kubernetes_cluster_role" "admin_role" {
-  metadata {
-    name = "admin-role"
-  }
+data "aws_caller_identity" "current" {}
 
-  rule {
-    api_groups = ["*"]
-    resources  = ["*"]
-    verbs      = ["*"]
-  }
+resource "aws_iam_user" "developer_user" {
+  name = "developer-user"
 }
 
-# Developer Role (more restricted)
-resource "kubernetes_role" "developer_role" {
+resource "aws_iam_user" "admin_user" {
+  name = "admin-user"
+}
+
+resource "aws_iam_role" "developer_role" {
+  name = "eks-developer-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        AWS = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/developer-user",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/CLI"
+        ]
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role" "admin_role" {
+  name = "eks-admin-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/admin-user"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "kubernetes_config_map_v1_data" "aws_auth" {
   metadata {
-    name      = "developer-role"
-    namespace = "default"
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    mapRoles = yamlencode([
+      {
+        rolearn  = aws_iam_role.developer_role.arn
+        username = "developer"
+        groups   = ["developers"]
+      },
+      {
+        rolearn  = aws_iam_role.admin_role.arn
+        username = "admin"
+        groups   = ["system:masters"]
+      }
+    ])
+  }
+
+  force = true
+  depends_on = [module.eks.cluster_id]
+}
+
+resource "kubernetes_role" "developer" {
+  metadata {
+    name      = "developer"
   }
 
   rule {
     api_groups = ["", "apps", "batch"]
-    resources  = ["pods", "services", "deployments", "jobs"]
+    resources  = ["pods", "deployments", "services", "configmaps", "jobs"]
     verbs      = ["get", "list", "watch", "create", "update", "patch", "delete"]
   }
 }
 
-# Bind roles to service accounts
-resource "kubernetes_service_account" "admin_account" {
+resource "kubernetes_role_binding" "developer" {
   metadata {
-    name      = "admin-account"
-    namespace = "kube-system"
-  }
-}
-
-resource "kubernetes_cluster_role_binding" "admin_binding" {
-  metadata {
-    name = "admin-binding"
+    name      = "developer-binding"
   }
 
   role_ref {
     api_group = "rbac.authorization.k8s.io"
-    kind      = "ClusterRole"
-    name      = kubernetes_cluster_role.admin_role.metadata[0].name
+    kind      = "Role"
+    name      = kubernetes_role.developer.metadata[0].name
   }
 
   subject {
-    kind      = "ServiceAccount"
-    name      = kubernetes_service_account.admin_account.metadata[0].name
-    namespace = "kube-system"
+    kind      = "Group"
+    name      = "developers"
+    api_group = "rbac.authorization.k8s.io"
   }
 }

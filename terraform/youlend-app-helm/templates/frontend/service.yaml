@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "myapp.fullname" . }}-frontend
+  labels:
+    {{- include "myapp.labels" . | nindent 4 }}
+    app: frontend
+  namespace: application
+spec:
+  type: {{ .Values.frontend.service.type }}
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "myapp.selectorLabels" . | nindent 4 }}
+    app: frontend

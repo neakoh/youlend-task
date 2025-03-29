@@ -2,7 +2,11 @@ import React from "react";
 import { Form, Input, Button, addToast  } from "@heroui/react";
 import { API_URL } from "@/config/url";
 
-export default function RegisterLoanForm() {
+interface RegisterLoanProps {
+  onLoanCreated?: () => void;
+}
+
+export default function RegisterLoanForm({ onLoanCreated }: RegisterLoanProps) {
   const [formData, setFormData] = React.useState({
     initial_funding_amount: "",
     borrower_name: "",
@@ -46,6 +50,11 @@ export default function RegisterLoanForm() {
       const data = await response.json();
       console.log(data)
       
+      if (response.ok) {
+        setFormData({ initial_funding_amount: "", borrower_name: "" });
+        onLoanCreated?.();
+      }
+      
       addToast({
         title: "Success",
         description: "Loan registered successfully!",
@@ -63,40 +72,41 @@ export default function RegisterLoanForm() {
   };
 
   return (
-    <Form
-      className="w-full flex flex-row items-start p-1"
-      onSubmit={(e) => {
-        e.preventDefault();
-        handleCreateLoan();
-      }}
-    >
-      <Input
-        isRequired
-        errorMessage="Please enter a valid funding amount"
-        name="initial_funding_amount"
-        placeholder="Enter your desired loan value."
-        type="number"
-        value={formData.initial_funding_amount}
-        onChange={handleInputChange}
-      />
-      {isAdmin && (
+    <div className="w-full flex flex-col items-start p-2">
+      <h1 className="text-2xl font-semibold mb-4">Register a new loan</h1>
+      <Form
+        className="w-full flex flex-row items-start"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleCreateLoan();
+        }}
+      >
         <Input
           isRequired
-          errorMessage="Please enter a valid borrower name"
-          label="Borrower Name"
-          labelPlacement="outside"
-          name="borrower_name"
-          placeholder="Enter borrower name"
-          type="text"
-          value={formData.borrower_name}
+          errorMessage="Please enter a valid funding amount"
+          name="initial_funding_amount"
+          placeholder="Enter your desired loan value."
+          type="number"
+          value={formData.initial_funding_amount}
           onChange={handleInputChange}
         />
-      )}
-      <div className="flex gap-2">
-        <Button color="primary" type="submit">
-          Apply for loan
-        </Button>
-      </div>
-    </Form>
+        {isAdmin && (
+          <Input
+            isRequired
+            errorMessage="Please enter a valid borrower name"
+            name="borrower_name"
+            placeholder="Enter borrower name"
+            type="text"
+            value={formData.borrower_name}
+            onChange={handleInputChange}
+          />
+        )}
+        <div className="flex gap-2">
+          <Button color="primary" type="submit">
+            Apply for loan
+          </Button>
+        </div>
+      </Form>
+    </div>
   );
 }

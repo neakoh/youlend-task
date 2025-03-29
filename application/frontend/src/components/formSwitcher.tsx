@@ -1,4 +1,4 @@
-import { Tabs, Tab, Card } from "@heroui/react";
+import { Tabs, Tab, Divider } from "@heroui/react";
 import LoginForm from "./forms/loginForm";
 import RegisterForm from "./forms/registerForm";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,6 +33,7 @@ export default function FormSwitcher() {
   const [[page, direction], setPage] = useState([0, 0]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -43,8 +44,10 @@ export default function FormSwitcher() {
     const handleStorageChange = () => {
       const newToken = localStorage.getItem("token");
       const newUsername = localStorage.getItem("username");
+      const newRole = localStorage.getItem("role");
       setIsLoggedIn(!!newToken);
       setUsername(newUsername || "");
+      setIsAdmin(newRole == "admin");
     };
 
     window.addEventListener("storage", handleStorageChange);
@@ -70,7 +73,7 @@ export default function FormSwitcher() {
   };
 
   return (
-    <Card className="p-2 w-full flex flex-row items-center justify-between overflow-hidden">
+    <div className="w-full flex flex-row items-center justify-between overflow-hidden">
       <AnimatePresence mode="wait">
         {!isLoggedIn ? (
           <motion.div
@@ -80,7 +83,7 @@ export default function FormSwitcher() {
             exit="exit"
             variants={variants}
             custom={direction}
-            className="w-full flex flex-row items-center"
+            className="w-full flex flex-row items-center mx-2 justify-between"
           >
             <Tabs 
               className="flex flex-row pr-4"
@@ -137,11 +140,15 @@ export default function FormSwitcher() {
               damping: 30
             }}
           >
-            <h2 className="text-2xl font-bold">Welcome, {username}</h2>
+            <div className="flex flex-row items-end gap-2">
+              <h2 className="text-2xl font-semibold">Welcome, {username}</h2>
+              <Divider orientation="vertical" className="h-8 mx-4" />
+              <h2 className="text-xl">Running as: <span className="text-primary">{isAdmin ? "Admin" : "User"}</span></h2>
+            </div>
             <Logout />
           </motion.div>
         )}
       </AnimatePresence>
-    </Card>
+    </div>
   );
 }

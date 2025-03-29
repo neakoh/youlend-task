@@ -1,0 +1,40 @@
+grafana:
+  admin:
+    existingSecret: "grafana-credentials"
+    userKey: admin-user
+    passwordKey: admin-password
+
+  persistence:
+    enabled: false
+    storageClass: "gp2-managed-delete"
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    terminationGracePeriodSeconds: 60
+  
+  replicas: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "1Gi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+  grafana.ini:
+    server:
+      domain: "k8s-istiosys-istioing-bc1108a414-9282d2bc9b8dacfd.elb.eu-west-2.amazonaws.com"
+      root_url: "%(protocol)s://%(domain)s/grafana"
+      serve_from_sub_path: true
+
+alertmanager:
+  enabled: false
+
+prometheus:
+  replicas: 1
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
