@@ -47,9 +47,6 @@ export default function RegisterLoanForm({ onLoanCreated }: RegisterLoanProps) {
         throw new Error(errorMessage || 'Registration failed');
       }
 
-      const data = await response.json();
-      console.log(data)
-      
       if (response.ok) {
         setFormData({ initial_funding_amount: "", borrower_name: "" });
         onLoanCreated?.();
@@ -73,7 +70,7 @@ export default function RegisterLoanForm({ onLoanCreated }: RegisterLoanProps) {
 
   return (
     <div className="w-full flex flex-col items-start p-2">
-      <h1 className="text-2xl font-semibold mb-4">Register a new loan</h1>
+      <h1 className="text-2xl font-normal mb-4">Register a new loan</h1>
       <Form
         className="w-full flex flex-row items-start"
         onSubmit={(e) => {

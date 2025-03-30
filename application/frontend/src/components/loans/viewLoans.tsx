@@ -49,7 +49,6 @@ export default function ViewLoans({ refreshKey = 0 }: ViewLoansProps) {
 
       const data = await response.json();
       setData(data);
-      console.log(data)
     } catch (error: Error | any) {
       addToast({
         title: "Error",
@@ -177,7 +176,7 @@ export default function ViewLoans({ refreshKey = 0 }: ViewLoansProps) {
 
   return (
     <div className="w-full flex flex-col items-start p-2 h-[66dvh] overflow-y-auto">
-      <h1 className="text-2xl font-semibold mb-4">{isAdmin ? "View Loans" : "View Your Loans"}</h1>
+      <h1 className="text-2xl font-normal mb-4">{isAdmin ? "View Loans" : "View Your Loans"}</h1>
       {data.length > 0 ? (
         <div className="w-full overflow-y-auto">
           <Accordion>

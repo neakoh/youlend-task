@@ -20,7 +20,7 @@ class LoanService {
     const loans = memoryStore.get('loans') || [];
     const repayments = memoryStore.get('repayments') || [];
     if (!isAdmin) {
-      logger.error('Service: Unauthorized access attempt from user: ', { userId });
+      logger.error(`Service: Unauthorized access attempt from user: ${userId}`);
       throw new Error('Unauthorized: You can only view your own loans');
     }
     // Map loans and include their repayments
@@ -44,7 +44,7 @@ class LoanService {
 
     // Check if user owns this loan
     if (!isAdmin && loan.borrower_id !== userId) {
-      logger.error('Service: Unauthorized loan access attempt', { loanId: id, requestedBy: userId });
+      logger.error(`Service: Unauthorized loan access attempt for loan id: ${id} by user id: ${userId}`);
       throw new Error('Unauthorized: You can only view your own loans');
     }
 
@@ -59,7 +59,7 @@ class LoanService {
     const matchingLoans = loans.filter(loan => loan.borrower_name === name);
 
     if (!matchingLoans.length) {
-      logger.warn('Service: No loans found', { borrowerName: name }); 
+      logger.warn(`Service: No loans found for user: ${name}`);
       return [];
     }
 
@@ -73,7 +73,7 @@ class LoanService {
     if (!isAdmin) {
       const userLoans = loansWithRepayments.filter(loan => loan.borrower_id === userId);
       if (!userLoans.length) {
-        logger.error('Service: Unauthorized access attempt', { userId });
+        logger.error(`Service: Unauthorized access attempt for user id: ${userId}`);
         throw new Error('Unauthorized: You can only view your own loans');
       }
       return userLoans;
@@ -92,7 +92,7 @@ class LoanService {
     const borrower_id = users.find(user => user.username === borrower_name)?.id;
     
     if (borrower_id != userId && !isAdmin) {
-      logger.error('Service: Unauthorized loan creation attempt', { borrowerId: borrower_id, requestedBy: userId });
+      logger.error(`Service: Unauthorized loan creation attempt for borrower id: ${borrower_id} by user id: ${userId}`);
       throw new Error('Unauthorized: You can only create your own loans');
     }
 
@@ -109,7 +109,7 @@ class LoanService {
 
     loans.push(newLoan);
     memoryStore.set('loans', loans);
-    logger.info('Service: Loan created successfully', { loanId: newId });
+    logger.info(`Service: Loan created successfully for loan id: ${newId}`);
 
     return newLoan;
   }
@@ -119,13 +119,13 @@ class LoanService {
     const loan = loans.find(l => l.id === loan_id);
 
     if (!loan) {
-      logger.warn('Service: Loan not found', { loanId: loan_id });
+      logger.warn(`Service: Loan not found for id: ${loan_id}`);
       return null;
     }
 
     // Check if the user owns this loan
     if (!isAdmin && loan.borrower_id !== borrower_id) {
-      logger.error('Service: Unauthorized loan update attempt', { loanId: loan_id, requestedBy: borrower_id });
+      logger.error(`Service: Unauthorized loan update attempt for loan id: ${loan_id} by user id: ${borrower_id}`);
       throw new Error('Unauthorized: You can only update your own loans');
     }
 
@@ -182,7 +182,7 @@ class LoanService {
 
     // Check if user owns this loan
     if (!isAdmin && loan.borrower_id !== userId) {
-      logger.error('Service: Unauthorized loan deletion attempt', { loanId: id, requestedBy: userId });
+      logger.error(`Service: Unauthorized loan deletion attempt for loan id: ${id} by user id: ${userId}`);
       throw new Error('Unauthorized: You can only delete your own loans');
     }
 

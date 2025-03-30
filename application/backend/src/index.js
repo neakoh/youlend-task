@@ -17,7 +17,9 @@ const { requestLogger, errorLogger } = setupLogging();
 app.use(requestLogger);
 
 // Setup Prometheus metrics
-const { metricsMiddleware } = setupMetrics();
+const { trackMetrics, metricsMiddleware } = setupMetrics();
+app.use(trackMetrics); // Track all HTTP requests
+app.get('/metrics', metricsMiddleware); // Metrics endpoint
 
 // Define routes
 app.get('/', (req, res) => {
@@ -29,9 +31,6 @@ const apiRoutes = require('./routes/loanRoutes');
 const authRoutes = require('./routes/authRoutes');
 app.use('/loans', apiRoutes);
 app.use('/auth', authRoutes);
-
-// Metrics endpoint for Prometheus scraping
-app.get('/metrics', metricsMiddleware);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

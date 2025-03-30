@@ -1,6 +1,6 @@
 import { Tabs, Tab, Divider } from "@heroui/react";
-import LoginForm from "./forms/loginForm";
-import RegisterForm from "./forms/registerForm";
+import LoginForm from "./loginForm";
+import RegisterForm from "./registerForm";
 import { motion, AnimatePresence } from "framer-motion";
 import Logout from "./logout";
 import { useState, useEffect } from "react";
@@ -28,7 +28,7 @@ const welcomeVariants = {
   exit: { opacity: 0, y: 20 }
 };
 
-export default function FormSwitcher() {
+export default function AuthBar() {
   const [selectedTab, setSelectedTab] = useState("login");
   const [[page, direction], setPage] = useState([0, 0]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -141,8 +141,8 @@ export default function FormSwitcher() {
             }}
           >
             <div className="flex flex-row items-end gap-2">
-              <h2 className="text-2xl font-semibold">Welcome, {username}</h2>
-              <Divider orientation="vertical" className="h-8 mx-4" />
+              <h2 className="text-2xl font-normal">Welcome, {username}</h2>
+              <Divider orientation="vertical" className="h-8 mx-2" />
               <h2 className="text-xl">Running as: <span className="text-primary">{isAdmin ? "Admin" : "User"}</span></h2>
             </div>
             <Logout />

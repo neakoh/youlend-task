@@ -51,13 +51,11 @@ export default function RegisterForm() {
       }
 
       const data = await response.json();
-      console.log(data)
-      
+
       localStorage.setItem("token", data.token);
       localStorage.setItem("username", data.user.username);
       localStorage.setItem("role", data.user.role);
       
-      // Dispatch register and login events since we're automatically logging in
       document.dispatchEvent(new Event("register"));
       document.dispatchEvent(new Event("login"));
       

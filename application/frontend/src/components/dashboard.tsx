@@ -1,8 +1,8 @@
 import { Card } from "@heroui/react";
-import RegisterLoan from "./forms/registerLoan";
-import ViewLoans from "./viewLoans";
+import RegisterLoan from "./loans/registerLoan";
+import ViewLoans from "./loans/viewLoans";
 import { useEffect, useState } from "react";
-import FormSwitcher from "./formSwitcher";
+import AuthBar from "./authentication/AuthBar";
 
 export default function Dashboard() {
     const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
@@ -22,7 +22,7 @@ export default function Dashboard() {
     return (
         <div className="w-full flex-col flex items-start p-4 gap-4">
             <Card className="w-full bg-slate-300/20">
-                <FormSwitcher />
+                <AuthBar />
             </Card>
 
             {isLoggedIn ? (

@@ -21,7 +21,4 @@ router.put('/', authenticateToken, loanController.updateLoan.bind(loanController
 // Delete a loan
 router.delete('/', authenticateToken, loanController.deleteLoan.bind(loanController));
 
-// Simulate an error
-router.get('/error', loanController.simulateError.bind(loanController));
-
 module.exports = router; 
