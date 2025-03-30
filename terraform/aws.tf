@@ -23,7 +23,7 @@ module "eks" {
   vpc_id     = module.youlend_k8s_vpc.vpc_id
   subnet_ids = module.youlend_k8s_vpc.private_subnets
 
-  cluster_addons = {
+  /*cluster_addons = {
     aws-ebs-csi-driver = {
       most_recent = true
       service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
@@ -33,7 +33,7 @@ module "eks" {
         }
       })
     }
-  }
+  }*/
 
   // Audit Logging
   cluster_enabled_log_types = [
@@ -44,8 +44,6 @@ module "eks" {
     "scheduler"
   ]
   create_cloudwatch_log_group = true
-  # Optional: Configure log retention
-  cloudwatch_log_group_retention_in_days = 90
 
   tags = {
     Environment = "dev"
@@ -54,7 +52,7 @@ module "eks" {
 }
 
 # Create IAM role for EBS CSI driver using IRSA
-module "ebs_csi_driver_irsa" {
+/*module "ebs_csi_driver_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.30"
 
@@ -68,7 +66,7 @@ module "ebs_csi_driver_irsa" {
       namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
     }
   }
-}
+}*/
 
 // ========================================================================================================
 // =============================================== VPC ====================================================
@@ -97,6 +95,53 @@ module "youlend_k8s_vpc" {
 
   tags = {
     Terraform   = "true"
+    Environment = var.environment
+  }
+}
+
+// ========================================================================================================
+// ========================================== Security Groups =============================================
+// ========================================================================================================
+
+# Get your current public IP address
+data "http" "my_public_ip" {
+  url = "https://api.ipify.org"
+}
+
+locals {
+  my_public_ip = "${chomp(data.http.my_public_ip.response_body)}/32"
+}
+
+resource "aws_security_group" "eks_cluster_sg" {
+  name        = "eks-cluster-sg"
+  description = "Security group for EKS cluster and nodes"
+  vpc_id      = module.youlend_k8s_vpc.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [local.my_public_ip]
+    description = "Allow HTTPS access from current IP"
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [local.my_public_ip]
+    description = "Allow HTTP access from current IP"
+  }
+
+  tags = {
+    Name        = "eks-cluster-sg"
     Environment = var.environment
   }
 }

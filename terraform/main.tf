@@ -12,7 +12,8 @@ resource "helm_release" "youlend-application" {
   depends_on = [
     kubernetes_namespace.application,
     helm_release.prometheus,
-    kubernetes_secret.jwt_token
+    kubernetes_secret.jwt_token,
+    kubernetes_secret.grafana_credentials
   ]
 }
 
@@ -34,7 +35,6 @@ resource "helm_release" "prometheus" {
   depends_on = [
     kubernetes_namespace.monitoring,
     helm_release.istio_control_plane,
-    kubernetes_storage_class.managed_delete_storage_class
   ]
 }
 
@@ -58,7 +58,6 @@ resource "helm_release" "elasticsearch" {
   depends_on = [
     kubernetes_namespace.logging,
     helm_release.istio_control_plane,
-    kubernetes_storage_class.managed_delete_storage_class
   ]
 }
 
@@ -97,36 +96,6 @@ resource "helm_release" "logstash" {
   ]
 }
 
-// ========================================================================================================
-// =========================================== Storage Class ==============================================
-// ========================================================================================================
-
-resource "kubernetes_storage_class" "managed_delete_storage_class" {
-  metadata {
-    name = "gp2-managed-delete"
-  }
-  storage_provisioner = "ebs.csi.aws.com"
-  reclaim_policy      = "Delete"
-  parameters = {
-    type = "gp2"
-  }
-  volume_binding_mode = "WaitForFirstConsumer"
-}
-
-resource "null_resource" "pvc_cleanup" {
-  depends_on = [
-    helm_release.elasticsearch,
-    helm_release.prometheus
-  ]
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = <<-EOT
-      kubectl delete pvc --namespace logging --all
-      kubectl delete pvc --namespace monitoring --all
-    EOT
-  }
-}
 // ========================================================================================================
 // ========================================= Network Policies =============================================
 // ========================================================================================================
