@@ -23,17 +23,6 @@ module "eks" {
   vpc_id     = module.youlend_k8s_vpc.vpc_id
   subnet_ids = module.youlend_k8s_vpc.private_subnets
 
-  /*cluster_addons = {
-    aws-ebs-csi-driver = {
-      most_recent = true
-      service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
-      configuration_values = jsonencode({
-        node = {
-          tolerateAllTaints = true
-        }
-      })
-    }
-  }*/
   cluster_security_group_id = aws_security_group.eks_cluster_sg.id
   // Audit Logging
   cluster_enabled_log_types = [
@@ -56,8 +45,15 @@ module "eks" {
   ] 
 }
 
+/*resource "aws_eks_addon" "ebs_csi_driver" {
+  cluster_name             = module.eks.cluster_name
+  addon_name               = "aws-ebs-csi-driver"
+  addon_version            = "v1.31.0-eksbuild.1"  # Use appropriate version
+  service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
+}
+
 # Create IAM role for EBS CSI driver using IRSA
-/*module "ebs_csi_driver_irsa" {
+module "ebs_csi_driver_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.30"
 

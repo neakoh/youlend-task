@@ -161,6 +161,13 @@ resource "kubectl_manifest" "network_policies" {
   
   # Override the namespace in the YAML
   override_namespace = each.value.namespace
+
+  depends_on = [
+    kubernetes_namespace.application,
+    kubernetes_namespace.logging,
+    kubernetes_namespace.monitoring,
+    kubernetes_namespace.istio-system
+  ]
 }
 
 // ========================================================================================================
@@ -178,6 +185,7 @@ resource "random_id" "jwt_secret" {
 }
 
 resource "kubernetes_secret" "grafana_credentials" {
+  count = var.prometheus_enabled ? 1 : 0
   metadata {
     name      = "grafana-credentials"
     namespace = "monitoring"
@@ -187,9 +195,13 @@ resource "kubernetes_secret" "grafana_credentials" {
     admin-user = "admin"
     admin-password = random_password.grafana_password.result
   }
+  depends_on = [
+    kubernetes_namespace.monitoring
+  ]
 }
 
 resource "kubernetes_secret" "jwt_token" {
+  count = var.application_enabled ? 1 : 0
   metadata {
     name      = "jwt-secret"
     namespace = "application"
@@ -198,6 +210,7 @@ resource "kubernetes_secret" "jwt_token" {
   data = {
     token = base64encode(random_id.jwt_secret.hex)
   }
+  depends_on = [
+    kubernetes_namespace.application
+  ]
 }
-
-

@@ -5,12 +5,11 @@ grafana:
     passwordKey: admin-password
 
   persistence:
-    enabled: false
-    storageClass: "gp2-managed-delete"
+    enabled: false # False as EBS CSI isnt working - Unsure why
+    storageClassName: "gp2"
     accessModes:
       - ReadWriteOnce
-    size: 10Gi
-    terminationGracePeriodSeconds: 60
+    size: 30Gi
   
   replicas: 1
   resources:

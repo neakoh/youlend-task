@@ -8,6 +8,8 @@ aws_enabled = true
 application_enabled = true
 
 istio_enabled = true
+
 elk_enabled = true
 prometheus_enabled = true
+
 network_policy_enabled = true

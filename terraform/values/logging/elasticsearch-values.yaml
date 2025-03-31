@@ -12,7 +12,7 @@ resources:
 
 persistence:
   enabled: false
-  storageClass: "gp2-managed-delete"
+  storageClass: "ebs-sc"
   accessModes:
     - ReadWriteOnce
   size: 30Gi
