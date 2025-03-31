@@ -34,7 +34,7 @@ module "eks" {
       })
     }
   }*/
-
+  cluster_security_group_id = aws_security_group.eks_cluster_sg.id
   // Audit Logging
   cluster_enabled_log_types = [
     "api",
@@ -49,6 +49,11 @@ module "eks" {
     Environment = "dev"
     Terraform   = "true"
   }
+
+  depends_on = [ 
+    module.youlend_k8s_vpc, 
+    aws_security_group.eks_cluster_sg 
+  ] 
 }
 
 # Create IAM role for EBS CSI driver using IRSA
@@ -145,3 +150,4 @@ resource "aws_security_group" "eks_cluster_sg" {
     Environment = var.environment
   }
 }
+

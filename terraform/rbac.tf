@@ -39,7 +39,7 @@ resource "aws_iam_role" "admin_role" {
   })
 }
 
-resource "kubernetes_config_map_v1_data" "aws_auth" {
+resource "kubernetes_config_map_v1" "aws_auth" {
   metadata {
     name      = "aws-auth"
     namespace = "kube-system"
@@ -59,9 +59,6 @@ resource "kubernetes_config_map_v1_data" "aws_auth" {
       }
     ])
   }
-
-  force = true
-  depends_on = [module.eks.cluster_id]
 }
 
 resource "kubernetes_role" "developer" {

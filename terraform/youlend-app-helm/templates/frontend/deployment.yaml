@@ -14,8 +14,6 @@ spec:
       app: frontend
   template:
     metadata:
-      annotations:
-        sidecar.istio.io/inject: "true"
       labels:
         {{- include "myapp.selectorLabels" . | nindent 8 }}
         app: frontend

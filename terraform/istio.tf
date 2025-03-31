@@ -108,11 +108,23 @@ spec:
       protocol: HTTP
     hosts:
     - "*"
+    tls:
+      httpsRedirect: true
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - "*"
+    tls:
+      mode: SIMPLE
+      credentialName: istio-ingressgateway-certs
 YAML
 
   depends_on = [
     helm_release.istio_crds,
-    helm_release.istio_control_plane
+    helm_release.istio_control_plane,
+    kubectl_manifest.gateway_certificate
   ]
 }
 
@@ -128,11 +140,73 @@ metadata:
   namespace: ${kubernetes_namespace.istio-system[0].metadata[0].name}
 spec:
   mtls:
-    mode: DISABLE
+    mode: PERMISSIVE
 YAML
 
   depends_on = [
     helm_release.istio_crds,
     helm_release.istio_control_plane
+  ]
+}
+
+// ========================================================================================================
+// =============================================== Certificate ============================================
+// ========================================================================================================
+
+resource "helm_release" "cert_manager" {
+  count      = var.istio_enabled ? 1 : 0
+  name       = "cert-manager"
+  repository = "https://charts.jetstack.io"
+  chart      = "cert-manager"
+  namespace  = "cert-manager"
+  create_namespace = true
+  
+  set {
+    name  = "installCRDs"
+    value = "true"
+  }
+  
+  depends_on = [
+    module.eks
+  ]
+}
+
+resource "kubectl_manifest" "self_signed_issuer" {
+  count = var.istio_enabled ? 1 : 0
+  yaml_body = <<YAML
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+YAML
+
+  depends_on = [
+    helm_release.cert_manager
+  ]
+}
+
+resource "kubectl_manifest" "gateway_certificate" {
+  count = var.istio_enabled ? 1 : 0
+  yaml_body = <<YAML
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: istio-ingressgateway-certs
+  namespace: ${kubernetes_namespace.istio-system[0].metadata[0].name}
+spec:
+  secretName: istio-ingressgateway-certs
+  commonName: "kubernetes-demo"
+  dnsNames:
+  - "kubernetes-demo"
+  - "*.elb.amazonaws.com"
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+YAML
+
+  depends_on = [
+    kubectl_manifest.self_signed_issuer
   ]
 }

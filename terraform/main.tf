@@ -12,8 +12,7 @@ resource "helm_release" "youlend-application" {
   depends_on = [
     kubernetes_namespace.application,
     helm_release.prometheus,
-    kubernetes_secret.jwt_token,
-    kubernetes_secret.grafana_credentials
+    kubernetes_secret.jwt_token
   ]
 }
 
@@ -35,6 +34,7 @@ resource "helm_release" "prometheus" {
   depends_on = [
     kubernetes_namespace.monitoring,
     helm_release.istio_control_plane,
+    kubernetes_secret.grafana_credentials
   ]
 }
 
@@ -199,3 +199,5 @@ resource "kubernetes_secret" "jwt_token" {
     token = base64encode(random_id.jwt_secret.hex)
   }
 }
+
+

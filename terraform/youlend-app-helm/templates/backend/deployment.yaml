@@ -17,7 +17,7 @@ spec:
     metadata:
       annotations:
         prometheus.io/scrape: "true"
-        sidecar.istio.io/inject: "true"
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
       labels:
         {{- include "myapp.selectorLabels" . | nindent 8 }}
         app: backend

@@ -6,6 +6,7 @@ resource "kubernetes_namespace" "application" {
     
     labels = {
       name = "application"
+      istio-injection = "enabled"
     }
   }
   depends_on = [
@@ -61,5 +62,9 @@ resource "kubernetes_namespace" "logging" {
 resource "kubernetes_namespace" "dev" {
   metadata {
     name = "development"
+    
+    labels = {
+      name = "development"
+    }
   }
 }
